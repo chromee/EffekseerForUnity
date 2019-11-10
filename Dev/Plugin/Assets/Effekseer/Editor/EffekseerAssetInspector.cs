@@ -25,6 +25,7 @@ namespace Effekseer.Editor
 		bool textureVisible = true;
 		bool soundVisible = true;
 		bool modelVisible = true;
+		bool materialVisible = true;
 
 		public override void OnInspectorGUI()
 		{
@@ -67,6 +68,20 @@ namespace Effekseer.Editor
 				EditorGUI.indentLevel++;
 				foreach (var res in asset.modelResources) {
 					if (EffekseerModelResource.InspectorField(res)) {
+						EditorUtility.SetDirty(asset);
+					}
+				}
+				EditorGUI.indentLevel--;
+			}
+
+			materialVisible = EditorGUILayout.Foldout(modelVisible, "Material Resources: " + asset.materialResources.Length);
+			if (materialVisible)
+			{
+				EditorGUI.indentLevel++;
+				foreach (var res in asset.materialResources)
+				{
+					if (EffekseerMaterialResource.InspectorField(res))
+					{
 						EditorUtility.SetDirty(asset);
 					}
 				}

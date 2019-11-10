@@ -40,7 +40,15 @@ namespace Effekseer.Editor
 				{
 					EffekseerModelAsset.CreateAsset(assetPath);
 				}
-                if (Path.GetExtension(assetPath) == ".efkproj")
+				if (Path.GetExtension(assetPath) == ".efkmat")
+				{
+					EffekseerMaterialAsset.CreateAsset(assetPath, false);
+				}
+				if (Path.GetExtension(assetPath) == ".efkmatd")
+				{
+					EffekseerMaterialAsset.CreateAsset(assetPath, true);
+				}
+				if (Path.GetExtension(assetPath) == ".efkproj")
                 {
                     EffekseerTool.Core.LoadFrom(assetPath);
                     var exporter = new EffekseerTool.Binary.Exporter();

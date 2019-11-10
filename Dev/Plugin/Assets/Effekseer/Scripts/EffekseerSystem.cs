@@ -565,6 +565,57 @@ namespace Effekseer
 			}
 		}
 
+		[AOT.MonoPInvokeCallback(typeof(Plugin.EffekseerMaterialLoaderLoad))]
+		private static IntPtr MaterialLoaderLoad(IntPtr path, IntPtr buffer, int bufferSize, ref int requiredBufferSize)
+		{
+			var pathstr = Marshal.PtrToStringUni(path);
+			pathstr = Path.ChangeExtension(pathstr, ".asset");
+			var asset = Instance.effectAssetInLoading;
+			var res = asset.FindMaterial(pathstr);
+			var material = (res != null) ? res.asset : null;
+
+			if (material != null)
+			{
+				requiredBufferSize = material.bytes.Length;
+
+				if (material.bytes.Length <= bufferSize)
+				{
+					Marshal.Copy(material.bytes, 0, buffer, material.bytes.Length);
+
+					if (Instance.RendererType == EffekseerRendererType.Unity)
+					{
+						var unityRendererMaterial = new UnityRendererMaterial();
+						unityRendererMaterial.Initialize(material.bytes);
+
+						IntPtr ptr = unityRendererMaterial.VertexBuffer.GetNativeBufferPtr();
+						if (!cachedMaterials.ContainsKey(ptr))
+						{
+							cachedMaterials.Add(ptr, unityRendererMaterial);
+						}
+						return ptr;
+					}
+
+					return new IntPtr(1);
+				}
+			}
+
+			return IntPtr.Zero;
+		}
+
+		[AOT.MonoPInvokeCallback(typeof(Plugin.EffekseerMaterialLoaderUnload))]
+		private static void MaterialLoaderUnload(IntPtr path, IntPtr materialPtr)
+		{
+			if (Instance.RendererType == EffekseerRendererType.Unity)
+			{
+				if (cachedMaterials.ContainsKey(materialPtr))
+				{
+					var material = cachedMaterials[materialPtr];
+					material.Dispose();
+					cachedMaterials.Remove(materialPtr);
+				}
+			}
+		}
+
 		[AOT.MonoPInvokeCallback(typeof(Plugin.EffekseerSoundLoaderLoad))]
 		private static IntPtr SoundLoaderLoad(IntPtr path) {
 			var pathstr = Marshal.PtrToStringUni(path);

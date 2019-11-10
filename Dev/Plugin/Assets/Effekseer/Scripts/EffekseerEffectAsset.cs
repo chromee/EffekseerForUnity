@@ -52,6 +52,7 @@ namespace Effekseer
 		public List<string> TexturePathList = new List<string>();
 		public List<string> SoundPathList = new List<string>();
 		public List<string> ModelPathList = new List<string>();
+		public List<string> MaterialPathList = new List<string>();
 	}
 
 
@@ -66,6 +67,8 @@ namespace Effekseer
 		public EffekseerSoundResource[] soundResources;
 		[SerializeField]
 		public EffekseerModelResource[] modelResources;
+		[SerializeField]
+		public EffekseerMaterialResource[] materialResources;
 
 		[SerializeField]
 		public float Scale = 1.0f;
@@ -175,6 +178,12 @@ namespace Effekseer
 		{
 			int index = Array.FindIndex(modelResources, (r) => (path == r.path));
 			return (index >= 0) ? modelResources[index] : null;
+		}
+
+		public EffekseerMaterialResource FindMaterial(string path)
+		{
+			int index = Array.FindIndex(modelResources, (r) => (path == r.path));
+			return (index >= 0) ? materialResources[index] : null;
 		}
 
 		public static bool ReadResourcePath(byte[] data, ref EffekseerResourcePath resourcePath)
@@ -305,6 +314,12 @@ namespace Effekseer
 			asset.modelResources = new EffekseerModelResource[resourcePath.ModelPathList.Count];
 			for (int i = 0; i < resourcePath.ModelPathList.Count; i++) {
 				asset.modelResources[i] = EffekseerModelResource.LoadAsset(assetDir, resourcePath.ModelPathList[i]);
+			}
+
+			asset.materialResources = new EffekseerMaterialResource[resourcePath.MaterialPathList.Count];
+			for (int i = 0; i < resourcePath.MaterialPathList.Count; i++)
+			{
+				asset.materialResources[i] = EffekseerMaterialResource.LoadAsset(assetDir, resourcePath.MaterialPathList[i]);
 			}
 
 			asset.Scale = defaultScale;
