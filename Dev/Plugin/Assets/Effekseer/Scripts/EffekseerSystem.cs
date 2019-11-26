@@ -130,6 +130,8 @@ namespace Effekseer
 
 		private static Dictionary<IntPtr, UnityRendererModel> cachedModels = new Dictionary<IntPtr, UnityRendererModel>();
 
+		private static Dictionary<IntPtr, Material> cachedMaterials = new Dictionary<IntPtr, Material>();
+
 		private void ReloadEffects()
 		{
 			foreach (var weakEffectAsset in EffekseerEffectAsset.enabledAssets)
@@ -376,7 +378,10 @@ namespace Effekseer
 			Plugin.EffekseerSetSoundLoaderEvent(
 				SoundLoaderLoad, 
 				SoundLoaderUnload);
-			
+			Plugin.EffekseerSetMaterialLoaderEvent(
+				MaterialLoaderLoad,
+				MaterialLoaderUnload);
+
 #if UNITY_EDITOR
 			for (int i = 0; i < nativeEffectsKeys.Count; i++) {
 				IntPtr nativeEffect = new IntPtr((long)ulong.Parse(nativeEffectsValues[i]));
@@ -441,6 +446,15 @@ namespace Effekseer
 			if (cachedModels.ContainsKey(key))
 			{
 				return cachedModels[key];
+			}
+			return null;
+		}
+
+		internal static Material GetCachedMaterial(IntPtr key)
+		{
+			if (cachedMaterials.ContainsKey(key))
+			{
+				return cachedMaterials[key];
 			}
 			return null;
 		}
@@ -566,7 +580,9 @@ namespace Effekseer
 		}
 
 		[AOT.MonoPInvokeCallback(typeof(Plugin.EffekseerMaterialLoaderLoad))]
-		private static IntPtr MaterialLoaderLoad(IntPtr path, IntPtr buffer, int bufferSize, ref int requiredBufferSize)
+		private static IntPtr MaterialLoaderLoad(IntPtr path, 
+			IntPtr materialBuffer, int materialBufferSize, ref int requiredMaterialBufferSize,
+			IntPtr cachedMaterialBuffer, int cachedMaterialBufferSize, ref int requiredCachedMaterialBufferSize)
 		{
 			var pathstr = Marshal.PtrToStringUni(path);
 			pathstr = Path.ChangeExtension(pathstr, ".asset");
@@ -576,26 +592,49 @@ namespace Effekseer
 
 			if (material != null)
 			{
-				requiredBufferSize = material.bytes.Length;
-
-				if (material.bytes.Length <= bufferSize)
+				if (Instance.RendererType == EffekseerRendererType.Unity)
 				{
-					Marshal.Copy(material.bytes, 0, buffer, material.bytes.Length);
+					var unityRendererMaterial = new Material("");
 
-					if (Instance.RendererType == EffekseerRendererType.Unity)
+					IntPtr ptr = IntPtr.Zero;
+					if (!cachedMaterials.ContainsKey(ptr))
 					{
-						var unityRendererMaterial = new UnityRendererMaterial();
-						unityRendererMaterial.Initialize(material.bytes);
-
-						IntPtr ptr = unityRendererMaterial.VertexBuffer.GetNativeBufferPtr();
-						if (!cachedMaterials.ContainsKey(ptr))
-						{
-							cachedMaterials.Add(ptr, unityRendererMaterial);
-						}
-						return ptr;
+						cachedMaterials.Add(ptr, unityRendererMaterial);
 					}
 
-					return new IntPtr(1);
+					throw new Exception("Unimplemented");
+
+					return ptr;
+				}
+				else
+				{
+					int status = 0;
+
+					if(material.cachedMaterialBuffers != null)
+					{
+						requiredCachedMaterialBufferSize = material.cachedMaterialBuffers.Length;
+
+						if (material.cachedMaterialBuffers.Length <= cachedMaterialBufferSize)
+						{
+							Marshal.Copy(material.cachedMaterialBuffers, 0, cachedMaterialBuffer, material.cachedMaterialBuffers.Length);
+						}
+
+						status += 2;
+					}
+
+					if(material.materialBuffers != null)
+					{
+						requiredMaterialBufferSize = material.materialBuffers.Length;
+
+						if (material.materialBuffers.Length <= materialBufferSize)
+						{
+							Marshal.Copy(material.materialBuffers, 0, materialBuffer, material.materialBuffers.Length);
+						}
+
+						status += 1;
+					}
+
+					return new IntPtr(status);
 				}
 			}
 
@@ -610,9 +649,9 @@ namespace Effekseer
 				if (cachedMaterials.ContainsKey(materialPtr))
 				{
 					var material = cachedMaterials[materialPtr];
-					material.Dispose();
 					cachedMaterials.Remove(materialPtr);
 				}
+				throw new Exception("Unimplemented");
 			}
 		}
 

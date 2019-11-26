@@ -191,7 +191,9 @@ namespace Effekseer
 		public static extern void EffekseerSetMaterialLoaderEvent(
 	EffekseerMaterialLoaderLoad load,
 	EffekseerMaterialLoaderUnload unload);
-		public delegate IntPtr EffekseerMaterialLoaderLoad(IntPtr path, IntPtr buffer, int bufferSize, ref int requiredBufferSize);
+		public delegate IntPtr EffekseerMaterialLoaderLoad(IntPtr path,
+			IntPtr materialBuffer, int materialBufferSize, ref int requiredMaterialBufferSize,
+			IntPtr cachedMaterialBuffer, int cachedMaterialBufferSize, ref int requiredCachedMaterialBufferSize);
 		public delegate void EffekseerMaterialLoaderUnload(IntPtr path, IntPtr modelPtr);
 
 		[DllImport(pluginName)]
